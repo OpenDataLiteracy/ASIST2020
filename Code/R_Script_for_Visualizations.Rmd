@@ -712,6 +712,48 @@ PLOD %>%
 ggsave("~/Images/Q1_256_Refactored_Facet_Waffle.png", bg = "transparent")
 ```
 
+```{r}
+Q1labels3 <- c(Q1_2 = "Our library provides \ninformation on community \nactivities and resources", 
+               Q1_5 = "Our library offers guidance \non how to find or use \nnew information resources",  
+               Q1_6 = "Our library offers guidance \non the use of \ninformation technologies")
 
+# https://github.com/hrbrmstr/waffle
+PLOD %>%
+  select(ResponseId, Q1_2, Q1_5, Q1_6) %>%
+  pivot_longer(cols = Q1_2:Q1_6,
+               names_to = "Question",
+               values_to = "Choice") %>%
+  mutate(Choice = factor(Choice, levels = c("Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"))) %>%
+  group_by(Question) %>% 
+  count(Choice) %>%
+  ggplot(aes(fill = Choice, values = n)) +
+    geom_waffle(color = "white", size = .25, n_rows = 4, flip = TRUE) +
+    facet_wrap(~Question, nrow = 1, strip.position = "bottom", labeller=labeller(Question = Q1labels3)) +
+    scale_x_discrete() + 
+    scale_y_continuous(labels = function(x) x * 4, # make this multiplyer the same as n_rows
+                     expand = c(0,0)) +
+    scale_fill_manual(
+      name = NULL,
+      values = c(
+        "Strongly disagree" = "#F7FCF0",
+        "Disagree" = "#CCEBC5",
+        "Neutral" = "#7BCCC4",
+        "Agree" = "#2B8CBE",
+        "Strongly agree" = "#084081"
+      )
+    ) + 
+  coord_equal() +
+  theme(panel.grid = element_blank(), 
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        #panel.background = element_blank(),
+        legend.key = element_rect(fill = NA),
+        # The two following lines make the background transparent
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA)) +
+  guides(fill = guide_legend(reverse = TRUE))
+
+ggsave("~/Images/Q1_256_Facet_Waffle.png", bg = "transparent")
+```
 
 
