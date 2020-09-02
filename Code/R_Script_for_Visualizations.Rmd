@@ -1,0 +1,717 @@
+---
+title: "WA Open Data Readiness Survey Visualizations"
+output: html_notebook
+---
+
+Code authored by Bree Norlander. [ORCID:0000-0002-0431-4221](https://orcid.org/0000-0002-0431-4221)
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(forcats)
+library(waffle)
+library(extrafont)
+library(hrbrthemes)
+```
+
+
+```{r}
+# Read in the data
+PLOD <- read.csv("~/Data/PLOD-SurveyData.csv", stringsAsFactors = T)
+```
+
+For Q3 (interests of local user community in following activities): bucket the answer choices as follows: unsure, unlikely, somewhat likely + likely, somewhat active + active, and highly likely (five categories instead of seven in that order). 
+
+```{r}
+# Add a re-factored variable that combines somewhat likely with likely AND somewhat active with active
+PLOD <- PLOD %>% 
+  mutate(Q3_1refactor = case_when(
+    Q3_1 == "Unsure" ~ "Unsure",
+    Q3_1 == "Unlikely" ~ "Unlikely",
+    Q3_1 == "Somewhat likely" ~ "Likely",
+    Q3_1 == "Likely" ~ "Likely",
+    Q3_1 == "Somewhat active" ~ "Active",
+    Q3_1 == "Active" ~ "Active",
+    Q3_1 == "Highly Active" ~ "Highly Active"
+  ),
+  Q3_2refactor = case_when(
+    Q3_2 == "Unsure" ~ "Unsure",
+    Q3_2 == "Unlikely" ~ "Unlikely",
+    Q3_2 == "Somewhat likely" ~ "Likely",
+    Q3_2 == "Likely" ~ "Likely",
+    Q3_2 == "Somewhat active" ~ "Active",
+    Q3_2 == "Active" ~ "Active",
+    Q3_2 == "Highly Active" ~ "Highly Active"
+  ),
+  Q3_3refactor = case_when(
+    Q3_3 == "Unsure" ~ "Unsure",
+    Q3_3 == "Unlikely" ~ "Unlikely",
+    Q3_3 == "Somewhat likely" ~ "Likely",
+    Q3_3 == "Likely" ~ "Likely",
+    Q3_3 == "Somewhat active" ~ "Active",
+    Q3_3 == "Active" ~ "Active",
+    Q3_3 == "Highly Active" ~ "Highly Active"
+  ),
+  Q3_4refactor = case_when(
+    Q3_4 == "Unsure" ~ "Unsure",
+    Q3_4 == "Unlikely" ~ "Unlikely",
+    Q3_4 == "Somewhat likely" ~ "Likely",
+    Q3_4 == "Likely" ~ "Likely",
+    Q3_4 == "Somewhat active" ~ "Active",
+    Q3_4 == "Active" ~ "Active",
+    Q3_4 == "Highly Active" ~ "Highly Active"
+  ),
+  Q3_5refactor = case_when(
+    Q3_5 == "Unsure" ~ "Unsure",
+    Q3_5 == "Unlikely" ~ "Unlikely",
+    Q3_5 == "Somewhat likely" ~ "Likely",
+    Q3_5 == "Likely" ~ "Likely",
+    Q3_5 == "Somewhat active" ~ "Active",
+    Q3_5 == "Active" ~ "Active",
+    Q3_5 == "Highly Active" ~ "Highly Active"
+  ),
+  Q3_6refactor = case_when(
+    Q3_6 == "Unsure" ~ "Unsure",
+    Q3_6 == "Unlikely" ~ "Unlikely",
+    Q3_6 == "Somewhat likely" ~ "Likely",
+    Q3_6 == "Likely" ~ "Likely",
+    Q3_6 == "Somewhat active" ~ "Active",
+    Q3_6 == "Active" ~ "Active",
+    Q3_6 == "Highly Active" ~ "Highly Active"
+  ),
+  Q3_7refactor = case_when(
+    Q3_7 == "Unsure" ~ "Unsure",
+    Q3_7 == "Unlikely" ~ "Unlikely",
+    Q3_7 == "Somewhat likely" ~ "Likely",
+    Q3_7 == "Likely" ~ "Likely",
+    Q3_7 == "Somewhat active" ~ "Active",
+    Q3_7 == "Active" ~ "Active",
+    Q3_7 == "Highly Active" ~ "Highly Active"
+  )
+  )
+```
+
+```{r}
+# Create a faceted histogram showing the count of responses by category
+
+# Q3labels will be used to label the facets
+Q3labels <- c(Q3_1refactor = "Website Links", Q3_2refactor = "Reference Assist.", 
+            Q3_3refactor = "Collections Dev.",  Q3_4refactor = "Professional Dev.",
+            Q3_5refactor = "Community Programs",  Q3_6refactor = "Local Gov't Collab",
+            Q3_7refactor = "Publish Data")
+
+
+PLOD %>% 
+  select(ResponseId, Q3_1refactor:Q3_7refactor) %>%
+  pivot_longer(cols = Q3_1refactor:Q3_7refactor,
+               names_to = "Question",
+               values_to = "Choice") %>%
+  mutate(Choice = factor(Choice, levels = c("Unsure", "Unlikely", "Likely", "Active", "Highly Active"))) %>% 
+  ggplot(aes(x = Choice, fill = Choice)) +
+  geom_histogram(stat="count", color = "black", size = 0.2) +
+  facet_wrap(~ Question, labeller=labeller(Question = Q3labels), ncol=4) +
+  theme_bw() +
+  scale_fill_brewer(palette="GnBu") +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, vjust = 1), 
+        axis.title.x=element_blank(),
+        legend.title=element_blank()) +
+  ylab("Count of Responses") +
+  labs(title = "Q.3", 
+       subtitle = "Considering the interests of your local user community, indicate your library’s likely \nor current level of activity, on a scale ranging from “Unlikely” to become active to \n“Highly active” now.")
+
+# Save chart
+ggsave("~/Images/Q3_Faceted_Refactored.png")
+```
+
+```{r}
+# Flip viz to horizontal
+PLOD %>% 
+  select(ResponseId, Q3_1refactor:Q3_7refactor) %>%
+  pivot_longer(cols = Q3_1refactor:Q3_7refactor,
+               names_to = "Question",
+               values_to = "Choice") %>%
+  mutate(Choice = factor(Choice, levels = c("Unsure", "Unlikely", "Likely", "Active", "Highly Active"))) %>% 
+  ggplot(aes(x = Choice, fill = Choice)) +
+  geom_histogram(stat="count", color = "black", size = 0.2) +
+  facet_wrap(~ Question, labeller=labeller(Question = Q3labels), ncol=4) +
+  theme_bw() +
+  scale_fill_brewer(palette="GnBu", guide = guide_legend(reverse=TRUE)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, vjust = 1), 
+        axis.title.x=element_blank(),
+        legend.title=element_blank()) +
+  ylab("Count of Responses") +
+  labs(title = "Q.3", 
+       subtitle = "Considering the interests of your local user community, indicate your library’s likely \nor current level of activity, on a scale ranging from “Unlikely” to become active to \n“Highly active” now.") +
+  coord_flip()
+
+# Save chart
+ggsave("~/Images/Q3_Faceted_Refactored_CoordFlip.png")
+```
+
+```{r}
+# Order the questions by most number of positive answers to least number
+# Find out what that order is
+Q3lvls <- PLOD %>% 
+  select(ResponseId, Q3_1refactor:Q3_7refactor) %>%
+  pivot_longer(cols = Q3_1refactor:Q3_7refactor,
+               names_to = "Question",
+               values_to = "Choice") %>%
+  mutate(Choice = factor(Choice, levels = c("Unsure", "Unlikely", "Likely", "Active", "Highly Active"))) %>%
+  group_by(Question, Choice) %>%
+  tally() %>%
+  filter(Choice %in% c("Likely", "Active", "Highly Active")) %>%
+  summarise(total = sum(n)) %>%
+  arrange(desc(total)) %>%
+  select(Question)
+
+# Create a stacked bar chart
+PLOD %>% 
+  select(ResponseId, Q3_1refactor:Q3_7refactor) %>%
+  pivot_longer(cols = Q3_1refactor:Q3_7refactor,
+               names_to = "Question",
+               values_to = "Choice") %>%
+  mutate(Choice = factor(Choice, levels = c("Unsure", "Unlikely", "Likely", "Active", "Highly Active")),
+         Question = factor(Question, levels = Q3lvls[[1]])) %>% 
+  ggplot(aes(x = Question, fill = forcats::fct_rev(Choice))) +
+    geom_bar(stat="count", color = "black", size = 0.2, position = "stack") +
+  theme_bw() +
+  scale_fill_manual(
+    name = NULL,
+    values = c(
+      "Unsure" = "#E0F3DB",
+      "Unlikely" = "#A8DDB5",
+      "Likely" = "#4EB3D3",
+      "Active" = "#2B8CBE",
+      "Highly Active" = "#084081"
+    )) +
+  #scale_fill_brewer(palette="GnBu", direction = -1) + # direction reverses the color palette
+  scale_x_discrete(labels=Q3labels) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, vjust = 1), 
+        axis.title.x=element_blank(),
+        legend.title=element_blank()) +
+  ylab("Count of Responses") +
+  labs(title = "Q.3", 
+       subtitle = "Considering the interests of your local user community, indicate your library’s likely \nor current level of activity, on a scale ranging from “Unlikely” to become active to \n“Highly active” now.")
+
+# Save chart
+ggsave("~/Images/Q3_Stacked_Refactored_Count.png")
+```
+
+```{r}
+# Stacked barchart normalized
+PLOD %>% 
+  select(ResponseId, Q3_1refactor:Q3_7refactor) %>%
+  pivot_longer(cols = Q3_1refactor:Q3_7refactor,
+               names_to = "Question",
+               values_to = "Choice") %>%
+  mutate(Choice = factor(Choice, levels = c("Unsure", "Unlikely", "Likely", "Active", "Highly Active")),
+         Question = factor(Question, levels = Q3lvls[[1]])) %>%  
+  ggplot(aes(x = Question, fill = forcats::fct_rev(Choice))) +
+    geom_bar(stat="count", color = "black", size = 0.2, position = "fill") + #position fill for percents
+  theme_bw() +
+  scale_fill_manual(
+    name = NULL,
+    values = c(
+      "Unsure" = "#E0F3DB",
+      "Unlikely" = "#A8DDB5",
+      "Likely" = "#4EB3D3",
+      "Active" = "#2B8CBE",
+      "Highly Active" = "#084081"
+    )) +
+  scale_x_discrete(labels=Q3labels) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, vjust = 1), 
+        axis.title.x=element_blank(),
+        axis.title.y = element_blank(),
+        legend.title=element_blank(),
+        # The two following lines make the background transparent
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA)
+        )
+
+# Save chart
+ggsave("~/Images/Q3_Stacked_Refactored_Pct.png", bg = "transparent")
+```
+
+Q7 (alignment) highlight the overwhelming agreement. Maybe also normalize mission and community interests together? Bucket strongly disagree and disagree together, along with agree and strongly agree. Could try the same thing on Q1?
+
+```{r}
+# Add a re-factored variable that combines strongly disagree with disagree AND agree with strongly agree
+PLOD <- PLOD %>% 
+  mutate(Q7_1refactor = case_when(
+    Q7_1 == "Not sure" ~ "Not sure",
+    Q7_1 == "Strongly disagree" ~ "Disagree",
+    Q7_1 == "Disagree" ~ "Disagree",
+    Q7_1 == "Neutral" ~ "Neutral",
+    Q7_1 == "Agree" ~ "Agree",
+    Q7_1 == "Strongly agree" ~ "Agree"
+  ),
+  Q7_2refactor = case_when(
+    Q7_2 == "Not sure" ~ "Not sure",
+    Q7_2 == "Strongly disagree" ~ "Disagree",
+    Q7_2 == "Disagree" ~ "Disagree",
+    Q7_2 == "Neutral" ~ "Neutral",
+    Q7_2 == "Agree" ~ "Agree",
+    Q7_2 == "Strongly agree" ~ "Agree"
+  ),
+  Q7_3refactor = case_when(
+    Q7_3 == "Not sure" ~ "Not sure",
+    Q7_3 == "Strongly disagree" ~ "Disagree",
+    Q7_3 == "Disagree" ~ "Disagree",
+    Q7_3 == "Neutral" ~ "Neutral",
+    Q7_3 == "Agree" ~ "Agree",
+    Q7_3 == "Strongly agree" ~ "Agree"
+  ),
+  Q7_4refactor = case_when(
+    Q7_4 == "Not sure" ~ "Not sure",
+    Q7_4 == "Strongly disagree" ~ "Disagree",
+    Q7_4 == "Disagree" ~ "Disagree",
+    Q7_4 == "Neutral" ~ "Neutral",
+    Q7_4 == "Agree" ~ "Agree",
+    Q7_4 == "Strongly agree" ~ "Agree"
+  ),
+  Q7_5refactor = case_when(
+    Q7_5 == "Not sure" ~ "Not sure",
+    Q7_5 == "Strongly disagree" ~ "Disagree",
+    Q7_5 == "Disagree" ~ "Disagree",
+    Q7_5 == "Neutral" ~ "Neutral",
+    Q7_5 == "Agree" ~ "Agree",
+    Q7_5 == "Strongly agree" ~ "Agree"
+  ),
+  Q7_6refactor = case_when(
+    Q7_6 == "Not sure" ~ "Not sure",
+    Q7_6 == "Strongly disagree" ~ "Disagree",
+    Q7_6 == "Disagree" ~ "Disagree",
+    Q7_6 == "Neutral" ~ "Neutral",
+    Q7_6 == "Agree" ~ "Agree",
+    Q7_6 == "Strongly agree" ~ "Agree"
+  )
+  )
+```
+
+```{r}
+Q7labels <- c(Q7_1refactor = "Aligns with Mission", Q7_2refactor = "Aligns with Community", 
+            Q7_3refactor = "Aligns with Tech. Proficiency",  Q7_4refactor = "Difficult to Prioritize",
+            Q7_5refactor = "Need New Funding",  Q7_6refactor = "Providing Leadership a Priority")
+
+# Try a stacked bar chart first
+
+PLOD %>% 
+  select(ResponseId, Q7_1refactor:Q7_6refactor) %>%
+  pivot_longer(cols = Q7_1refactor:Q7_6refactor,
+               names_to = "Question",
+               values_to = "Choice") %>%
+  mutate(Choice = factor(Choice, levels = c("Not sure", "Disagree", "Neutral", "Agree"))) %>% 
+  ggplot(aes(x = Question, fill = forcats::fct_rev(Choice))) +
+    geom_bar(stat="count", color = "black", size = 0.2, position = "fill") +
+  theme_bw() +
+  scale_fill_brewer(palette="GnBu", direction = -1) + # direction reverses the color palette
+  scale_x_discrete(labels=Q7labels) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, vjust = 1), 
+        axis.title.x=element_blank(),
+        legend.title=element_blank()) +
+  ylab("Percentage of Responses") +
+  labs(title = "Q.7", 
+       subtitle = "Please indicate the degree to which you agree with the following statements.")
+
+# Save chart
+ggsave("~/Images/Q7_Stacked_Refactored_Pct.png")
+```
+
+```{r}
+# Help with waffle chart: https://www.geeksforgeeks.org/r-waffle-chart/
+# https://github.com/hrbrmstr/waffle
+
+# Old school method of creating a waffle chart
+waffle(table(PLOD %>% 
+             mutate(Q7_1refactor = factor(Q7_1refactor, levels = c("Not sure", "Disagree", "Neutral", "Agree"))) %>% 
+             select(Q7_1refactor)), 
+       rows = 3,
+       title="Open data initiatives align with our library’s mission.",  
+       xlab="1 square = 1 survey respondent")
+```
+
+```{r}
+# Waffle charts can be made within ggplot!
+# https://github.com/hrbrmstr/waffle
+PLOD %>%
+  mutate(Q7_1refactor = factor(Q7_1refactor, levels = c("Not sure", "Disagree", "Neutral", "Agree"))) %>% 
+  count(Q7_1refactor) %>%
+  ggplot(aes(label = Q7_1refactor, values = n, colour = Q7_1refactor)) +
+  geom_pictogram(n_rows = 3, size = 6.2) +
+  scale_color_manual(
+    name = NULL,
+    values = c(
+      "Not sure" = "#E0F3DB",
+      "Disagree" = "#4EB3D3",
+      "Neutral" = "#A8DDB5",
+      "Agree" = "#0868AC"
+    )
+  ) +
+  scale_label_pictogram(
+    name = NULL,
+    values = c(
+      "Not sure" = "book",
+      "Disagree" = "book",
+      "Neutral" = "book",
+      "Agree" = "book"
+    )
+  ) +
+  coord_equal() +
+  theme_enhance_waffle() +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.title=element_blank(),
+        legend.key = element_rect(fill = NA),
+        legend.text = element_text(hjust = 0, vjust = 1)) +
+  labs(
+      title = "Open data initiatives align with our library’s mission.", 
+      subtitle = "1 book = 1 survey respondent"
+    )
+
+ggsave("~/Images/Q7_Refactored_Icon_Waffle.png")
+```
+
+```{r}
+# https://github.com/hrbrmstr/waffle
+PLOD %>%
+  select(ResponseId, Q7_1refactor:Q7_6refactor) %>%
+  pivot_longer(cols = Q7_1refactor:Q7_6refactor,
+               names_to = "Question",
+               values_to = "Choice") %>%
+  mutate(Choice = factor(Choice, levels = c("Not sure", "Disagree", "Neutral", "Agree"))) %>%
+  group_by(Question) %>% 
+  count(Choice) %>%
+  ggplot(aes(fill=Choice, values=n)) +
+    geom_waffle(color = "white", size=1.125, n_rows = 6) +
+    facet_wrap(~Question, ncol=3, labeller=labeller(Question = Q7labels)) +
+    scale_x_discrete(expand=c(0,0)) +
+    scale_y_discrete(expand=c(0,0)) +
+    scale_fill_brewer(palette="GnBu") +
+    coord_equal() +
+    labs(
+      title = "Open data initiatives align with our library’s mission.", 
+      subtitle = "1 square = 1 survey respondent"
+    ) +
+    theme_enhance_waffle() +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(),
+          axis.ticks = element_blank(),
+          legend.title=element_blank(),
+          legend.key = element_rect(fill = NA),
+          legend.text = element_text(hjust = 0, vjust = 1))
+
+ggsave("~/Images/Q7_Refactored_Facet_Waffle.png")
+```
+
+```{r}
+# Add a re-factored variable that combines strongly disagree with disagree AND agree with strongly agree
+PLOD <- PLOD %>% 
+  mutate(Q1_1refactor = case_when(
+    Q1_1 == "Strongly disagree" ~ "Disagree",
+    Q1_1 == "Disagree" ~ "Disagree",
+    Q1_1 == "Neutral" ~ "Neutral",
+    Q1_1 == "Agree" ~ "Agree",
+    Q1_1 == "Strongly agree" ~ "Agree"
+  ),
+  Q1_2refactor = case_when(
+    Q1_2 == "Strongly disagree" ~ "Disagree",
+    Q1_2 == "Disagree" ~ "Disagree",
+    Q1_2 == "Neutral" ~ "Neutral",
+    Q1_2 == "Agree" ~ "Agree",
+    Q1_2 == "Strongly agree" ~ "Agree"
+  ),
+  Q1_3refactor = case_when(
+    Q1_3 == "Strongly disagree" ~ "Disagree",
+    Q1_3 == "Disagree" ~ "Disagree",
+    Q1_3 == "Neutral" ~ "Neutral",
+    Q1_3 == "Agree" ~ "Agree",
+    Q1_3 == "Strongly agree" ~ "Agree"
+  ),
+  Q1_4refactor = case_when(
+    Q1_4 == "Strongly disagree" ~ "Disagree",
+    Q1_4 == "Disagree" ~ "Disagree",
+    Q1_4 == "Neutral" ~ "Neutral",
+    Q1_4 == "Agree" ~ "Agree",
+    Q1_4 == "Strongly agree" ~ "Agree"
+  ),
+  Q1_5refactor = case_when(
+    Q1_5 == "Strongly disagree" ~ "Disagree",
+    Q1_5 == "Disagree" ~ "Disagree",
+    Q1_5 == "Neutral" ~ "Neutral",
+    Q1_5 == "Agree" ~ "Agree",
+    Q1_5 == "Strongly agree" ~ "Agree"
+  ),
+  Q1_6refactor = case_when(
+    Q1_6 == "Strongly disagree" ~ "Disagree",
+    Q1_6 == "Disagree" ~ "Disagree",
+    Q1_6 == "Neutral" ~ "Neutral",
+    Q1_6 == "Agree" ~ "Agree",
+    Q1_6 == "Strongly agree" ~ "Agree"
+  ),
+   Q1_7refactor = case_when(
+    Q1_7 == "Strongly disagree" ~ "Disagree",
+    Q1_7 == "Disagree" ~ "Disagree",
+    Q1_7 == "Neutral" ~ "Neutral",
+    Q1_7 == "Agree" ~ "Agree",
+    Q1_7 == "Strongly agree" ~ "Agree"
+  ),
+  Q1_8refactor = case_when(
+    Q1_8 == "Strongly disagree" ~ "Disagree",
+    Q1_8 == "Disagree" ~ "Disagree",
+    Q1_8 == "Neutral" ~ "Neutral",
+    Q1_8 == "Agree" ~ "Agree",
+    Q1_8 == "Strongly agree" ~ "Agree"
+  ),
+  Q1_9refactor = case_when(
+    Q1_9 == "Strongly disagree" ~ "Disagree",
+    Q1_9 == "Disagree" ~ "Disagree",
+    Q1_9 == "Neutral" ~ "Neutral",
+    Q1_9 == "Agree" ~ "Agree",
+    Q1_9 == "Strongly agree" ~ "Agree"
+  ),
+  Q1_10refactor = case_when(
+    Q1_10 == "Strongly disagree" ~ "Disagree",
+    Q1_10 == "Disagree" ~ "Disagree",
+    Q1_10 == "Neutral" ~ "Neutral",
+    Q1_10 == "Agree" ~ "Agree",
+    Q1_10 == "Strongly agree" ~ "Agree"
+  ),
+  Q1_11refactor = case_when(
+    Q1_11 == "Strongly disagree" ~ "Disagree",
+    Q1_11 == "Disagree" ~ "Disagree",
+    Q1_11 == "Neutral" ~ "Neutral",
+    Q1_11 == "Agree" ~ "Agree",
+    Q1_11 == "Strongly agree" ~ "Agree"
+  )
+  )
+```
+
+```{r}
+Q1labels <- c(Q1_1refactor = "Gateway to Local Gov't", Q1_2refactor = "Provide Info on Community", 
+            Q1_3refactor = "Access to Local History",  Q1_4refactor = "Gov't Info in Digital Form",
+            Q1_5refactor = "Guidance with New Info Resources",  Q1_6refactor = "Guidance Using Info Tech",
+            Q1_7refactor = "Comm. Seeks Local Public Interest", Q1_8refactor = "Local Gov't Turns to Libr.",
+            Q1_9refactor = "Comm. Interest Grps Turn to Libr.", Q1_10refactor = "Collect Library Data",
+            Q1_11refactor = "Libr. Practices Org. Transparency")
+```
+
+```{r}
+# https://github.com/hrbrmstr/waffle
+PLOD %>%
+  select(ResponseId, Q1_1refactor:Q1_11refactor) %>%
+  pivot_longer(cols = Q1_1refactor:Q1_11refactor,
+               names_to = "Question",
+               values_to = "Choice") %>%
+  mutate(Choice = factor(Choice, levels = c("Disagree", "Neutral", "Agree"))) %>%
+  group_by(Question) %>% 
+  count(Choice) %>%
+  ggplot(aes(fill=Choice, values=n)) +
+    geom_waffle(color = "white", size=1.125, n_rows = 6) +
+    facet_wrap(~Question, ncol=4, labeller=labeller(Question = Q1labels)) +
+    scale_x_discrete(expand=c(0,0)) +
+    scale_y_discrete(expand=c(0,0)) +
+    scale_fill_brewer(palette="GnBu") +
+    coord_equal() +
+    theme_enhance_waffle() +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(),
+          axis.ticks = element_blank(),
+          legend.title=element_blank(),
+          legend.key = element_rect(fill = NA),
+          legend.text = element_text(hjust = 0, vjust = 1))
+
+ggsave("~/Images/Q1_Refactored_Facet_Waffle.png")
+```
+
+```{r}
+# https://github.com/hrbrmstr/waffle
+PLOD %>%
+  mutate(Q1_1refactor = factor(Q1_1refactor, levels = c("Disagree", "Neutral", "Agree"))) %>% 
+  count(Q1_1refactor) %>%
+  ggplot(aes(fill = Q1_1refactor, values = n, colour = Q1_1refactor)) +
+    geom_waffle(n_rows = 6, size = 0.33, colour = "white") +
+    scale_fill_manual(
+      name = NULL,
+      values = c(
+        "Disagree" = "#E0F3DB",
+        "Neutral" = "#A8DDB5",
+        "Agree" = "#2B8CBE"
+      )
+    ) + 
+    coord_equal() +
+    theme_enhance_waffle() +
+    theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.title=element_blank(),
+        legend.key = element_rect(fill = NA),
+        legend.text = element_text(hjust = 0, vjust = 1),
+        plot.title = element_text(hjust = 0.5, 
+                                  size=13, 
+                                  face="bold", 
+                                  margin = margin(10, 0, 0, 0), 
+                                  color = "#084081")
+        ) +
+  labs(title = "Our library serves as a gateway to local government information.")
+
+ggsave("~/Images/Q1.1_Refactored_Waffle.png")
+```
+
+```{r}
+# https://github.com/hrbrmstr/waffle
+PLOD %>%
+  mutate(Q1_6refactor = factor(Q1_6refactor, levels = c("Disagree", "Neutral", "Agree"))) %>% 
+  count(Q1_6refactor) %>%
+  ggplot(aes(fill = Q1_6refactor, values = n, colour = Q1_6refactor)) +
+    geom_waffle(n_rows = 6, size = 0.33, colour = "white") +
+    scale_fill_manual(
+      name = NULL,
+      values = c(
+        "Disagree" = "#E0F3DB",
+        "Neutral" = "#A8DDB5",
+        "Agree" = "#2B8CBE"
+      )
+    ) + 
+    coord_equal() +
+    theme_enhance_waffle() +
+    theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.title=element_blank(),
+        legend.key = element_rect(fill = NA),
+        legend.text = element_text(hjust = 0, vjust = 1),
+        plot.title = element_text(hjust = 0.5, 
+                                  size=13, 
+                                  face="bold", 
+                                  margin = margin(10, 0, 0, 0), 
+                                  color = "#084081")
+        ) +
+  labs(title = "Our library offers guidance on \nthe use of information technologies.")
+
+ggsave("~/Images/Q1.6_Refactored_Waffle.png")
+```
+
+```{r}
+# https://github.com/hrbrmstr/waffle
+PLOD %>%
+  mutate(Q1_5refactor = factor(Q1_5refactor, levels = c("Disagree", "Neutral", "Agree"))) %>% 
+  count(Q1_5refactor) %>%
+  ggplot(aes(fill = Q1_5refactor, values = n, colour = Q1_5refactor)) +
+    geom_waffle(n_rows = 6, size = 0.33, colour = "white") +
+    scale_fill_manual(
+      name = NULL,
+      values = c(
+        "Disagree" = "#E0F3DB",
+        "Neutral" = "#A8DDB5",
+        "Agree" = "#2B8CBE"
+      )
+    ) + 
+    coord_equal() +
+    theme_enhance_waffle() +
+    theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.title=element_blank(),
+        legend.key = element_rect(fill = NA),
+        legend.text = element_text(hjust = 0, vjust = 1),
+        plot.title = element_text(hjust = 0.5, 
+                                  size=13, 
+                                  face="bold", 
+                                  margin = margin(10, 0, 0, 0), 
+                                  color = "#084081")
+        ) +
+  labs(title = "Our library offers guidance on how to find \nor use new information resources.")
+
+ggsave("~/Images/Q1.5_Refactored_Waffle.png")
+```
+
+```{r}
+# https://github.com/hrbrmstr/waffle
+PLOD %>%
+  mutate(Q1_2refactor = factor(Q1_2refactor, levels = c("Disagree", "Neutral", "Agree"))) %>% 
+  count(Q1_2refactor) %>%
+  ggplot(aes(fill = Q1_2refactor, values = n, colour = Q1_2refactor)) +
+    geom_waffle(n_rows = 6, size = 0.33, colour = "white") +
+    scale_fill_manual(
+      name = NULL,
+      values = c(
+        "Disagree" = "#E0F3DB",
+        "Neutral" = "#A8DDB5",
+        "Agree" = "#2B8CBE"
+      )
+    ) + 
+    coord_equal() +
+    theme_enhance_waffle() +
+    theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.title=element_blank(),
+        legend.key = element_rect(fill = NA),
+        legend.text = element_text(hjust = 0, vjust = 1),
+        plot.title = element_text(hjust = 0.5, 
+                                  size=13, 
+                                  face="bold", 
+                                  margin = margin(10, 0, 0, 0), 
+                                  color = "#084081")
+        ) +
+  labs(title = "Our library provides information on \ncommunity activities and resources.")
+
+ggsave("~/Images/Q1.2_Refactored_Waffle.png")
+```
+
+```{r}
+Q1labels2 <- c(Q1_2refactor = "Our library provides \ninformation on community \nactivities and resources", 
+               Q1_5refactor = "Our library offers guidance \non how to find or use \nnew information resources",  
+               Q1_6refactor = "Our library offers guidance \non the use of \ninformation technologies")
+
+# https://github.com/hrbrmstr/waffle
+PLOD %>%
+  select(ResponseId, Q1_2refactor, Q1_5refactor, Q1_6refactor) %>%
+  pivot_longer(cols = Q1_2refactor:Q1_6refactor,
+               names_to = "Question",
+               values_to = "Choice") %>%
+  mutate(Choice = factor(Choice, levels = c("Disagree", "Neutral", "Agree"))) %>%
+  group_by(Question) %>% 
+  count(Choice) %>%
+  ggplot(aes(fill = Choice, values = n)) +
+    geom_waffle(color = "white", size = .25, n_rows = 4, flip = TRUE) +
+    facet_wrap(~Question, nrow = 1, strip.position = "bottom", labeller=labeller(Question = Q1labels2)) +
+    scale_x_discrete() + 
+    scale_y_continuous(labels = function(x) x * 4, # make this multiplyer the same as n_rows
+                     expand = c(0,0)) +
+    scale_fill_manual(
+      name = NULL,
+      values = c(
+        "Disagree" = "#E0F3DB",
+        "Neutral" = "#A8DDB5",
+        "Agree" = "#2B8CBE"
+      )
+    ) + 
+  coord_equal() +
+  theme(panel.grid = element_blank(), 
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        #panel.background = element_blank(),
+        legend.key = element_rect(fill = NA),
+        # The two following lines make the background transparent
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA)) +
+  guides(fill = guide_legend(reverse = TRUE))
+
+ggsave("~/Images/Q1_256_Refactored_Facet_Waffle.png", bg = "transparent")
+```
+
+
+
+
