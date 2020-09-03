@@ -21,7 +21,61 @@ library(hrbrthemes)
 PLOD <- read.csv("~/Data/PLOD-SurveyData.csv", stringsAsFactors = T)
 ```
 
-For Q3 (interests of local user community in following activities): bucket the answer choices as follows: unsure, unlikely, somewhat likely + likely, somewhat active + active, and highly likely (five categories instead of seven in that order). 
+```{r}
+# For question one we will create a faceted waffle chart with 3 subsections as in the labels below:
+Q1labels3 <- c(Q1_2 = "Our library provides \ninformation on community \nactivities and resources", 
+               Q1_5 = "Our library offers guidance \non how to find or use \nnew information resources",  
+               Q1_6 = "Our library offers guidance \non the use of \ninformation technologies")
+
+# Created the faceted waffle chart
+# following tutorial at https://github.com/hrbrmstr/waffle
+PLOD %>%
+  select(ResponseId, Q1_2, Q1_5, Q1_6) %>%
+  # Pivot the data for viz purposes
+  pivot_longer(cols = Q1_2:Q1_6,
+               names_to = "Question",
+               values_to = "Choice") %>%
+  # set the order of the factor
+  mutate(Choice = factor(Choice, 
+                         levels = c("Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"))) %>%
+  group_by(Question) %>%
+  # count will result in a new variable 'n'
+  count(Choice) %>%
+  ggplot(aes(fill = Choice, values = n)) +
+    geom_waffle(color = "white", 
+                size = .25, 
+                n_rows = 4, 
+                flip = TRUE) + # similar to coord_flip function, waffles are default horizontal
+    facet_wrap(~Question, 
+               nrow = 1, 
+               strip.position = "bottom", 
+               labeller=labeller(Question = Q1labels3) # use the custom labels assigned above
+               ) + 
+    scale_x_discrete() + 
+    scale_y_continuous(labels = function(x) x * 4, # make this multiplyer the same as n_rows
+                     expand = c(0,0)) +
+    scale_fill_manual(name = NULL,
+                      values = c("Strongly disagree" = "#F7FCF0",
+                                 "Disagree" = "#CCEBC5",
+                                 "Neutral" = "#7BCCC4",
+                                 "Agree" = "#2B8CBE",
+                                 "Strongly agree" = "#084081")
+                      ) + 
+  coord_equal() +
+  theme(panel.grid = element_blank(), 
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        legend.key = element_rect(fill = NA),
+        # The two following lines make the background transparent
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA)
+        ) +
+  guides(fill = guide_legend(reverse = TRUE))
+
+ggsave("~/Images/Q1_256_Facet_Waffle.png", bg = "transparent")
+```
+
+For Q3 (interests of local user community in following activities): create a refactored variable that buckets the answer choices as follows: unsure, unlikely, somewhat likely + likely, somewhat active + active, and highly likely (five categories instead of seven in that order) for simplicity on a particular chart. 
 
 ```{r}
 # Add a re-factored variable that combines somewhat likely with likely AND somewhat active with active
@@ -93,7 +147,7 @@ PLOD <- PLOD %>%
 ```
 
 ```{r}
-# Order the questions by most number of positive answers to least number
+# Order the questions by most number of positive ("Likely", "Active", "Highly Active") answers to least
 # Find out what that order is
 Q3lvls <- PLOD %>% 
   select(ResponseId, Q3_1refactor:Q3_7refactor) %>%
@@ -108,31 +162,41 @@ Q3lvls <- PLOD %>%
   arrange(desc(total)) %>%
   select(Question)
 
-# Create a stacked bar chart
+# Q3labels will be used to label the facets
+Q3labels <- c(Q3_1refactor = "Website Links", Q3_2refactor = "Reference Assist.", 
+            Q3_3refactor = "Collections Dev.",  Q3_4refactor = "Professional Dev.",
+            Q3_5refactor = "Community Programs",  Q3_6refactor = "Local Gov't Collab",
+            Q3_7refactor = "Publish Data")
+
+# Create a stacked bar chart of the count of responses
 PLOD %>% 
   select(ResponseId, Q3_1refactor:Q3_7refactor) %>%
   pivot_longer(cols = Q3_1refactor:Q3_7refactor,
                names_to = "Question",
                values_to = "Choice") %>%
-  mutate(Choice = factor(Choice, levels = c("Unsure", "Unlikely", "Likely", "Active", "Highly Active")),
-         Question = factor(Question, levels = Q3lvls[[1]])) %>% 
+  mutate(Choice = factor(Choice, 
+                         levels = c("Unsure", "Unlikely", "Likely", "Active", "Highly Active")
+                         ),
+         Question = factor(Question, levels = Q3lvls[[1]])) %>%
   ggplot(aes(x = Question, fill = forcats::fct_rev(Choice))) +
-    geom_bar(stat="count", color = "black", size = 0.2, position = "stack") +
+  geom_bar(stat="count", 
+           color = "black", 
+           size = 0.2, 
+           position = "stack") +
   theme_bw() +
   scale_fill_manual(
     name = NULL,
-    values = c(
-      "Unsure" = "#E0F3DB",
-      "Unlikely" = "#A8DDB5",
-      "Likely" = "#4EB3D3",
-      "Active" = "#2B8CBE",
-      "Highly Active" = "#084081"
-    )) +
-  #scale_fill_brewer(palette="GnBu", direction = -1) + # direction reverses the color palette
+    values = c("Unsure" = "#E0F3DB",
+               "Unlikely" = "#A8DDB5",
+               "Likely" = "#4EB3D3",
+               "Active" = "#2B8CBE",
+               "Highly Active" = "#084081")
+    ) +
   scale_x_discrete(labels=Q3labels) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1, vjust = 1), 
         axis.title.x=element_blank(),
-        legend.title=element_blank()) +
+        legend.title=element_blank()
+        ) +
   ylab("Count of Responses") +
   labs(title = "Q.3", 
        subtitle = "Considering the interests of your local user community, indicate your library’s likely \nor current level of activity, on a scale ranging from “Unlikely” to become active to \n“Highly active” now.")
@@ -148,20 +212,24 @@ PLOD %>%
   pivot_longer(cols = Q3_1refactor:Q3_7refactor,
                names_to = "Question",
                values_to = "Choice") %>%
-  mutate(Choice = factor(Choice, levels = c("Unsure", "Unlikely", "Likely", "Active", "Highly Active")),
-         Question = factor(Question, levels = Q3lvls[[1]])) %>%  
+  mutate(Choice = factor(Choice, 
+                         levels = c("Unsure", "Unlikely", "Likely", "Active", "Highly Active")
+                         ),
+         Question = factor(Question, levels = Q3lvls[[1]])) %>%
   ggplot(aes(x = Question, fill = forcats::fct_rev(Choice))) +
-    geom_bar(stat="count", color = "black", size = 0.2, position = "fill") + #position fill for percents
+  geom_bar(stat="count", 
+           color = "black", 
+           size = 0.2, 
+           position = "fill") + #position fill for percents
   theme_bw() +
   scale_fill_manual(
     name = NULL,
-    values = c(
-      "Unsure" = "#E0F3DB",
-      "Unlikely" = "#A8DDB5",
-      "Likely" = "#4EB3D3",
-      "Active" = "#2B8CBE",
-      "Highly Active" = "#084081"
-    )) +
+    values = c("Unsure" = "#E0F3DB",
+               "Unlikely" = "#A8DDB5",
+               "Likely" = "#4EB3D3",
+               "Active" = "#2B8CBE",
+               "Highly Active" = "#084081")
+    ) +
   scale_x_discrete(labels=Q3labels) +
   scale_y_continuous(labels = scales::percent) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1, vjust = 1), 
@@ -183,79 +251,39 @@ Q7 visualize the overwhelming agreement.
 Q7labels2 <- c(Q7_1 = "Aligns with Mission", Q7_2 = "Aligns with Community", 
             Q7_3 = "Aligns with Tech. Proficiency",  Q7_4 = "Difficult to Prioritize",
             Q7_5 = "Need New Funding",  Q7_6 = "Providing Leadership a Priority")
+
 # https://github.com/hrbrmstr/waffle
 PLOD %>%
   select(ResponseId, Q7_1:Q7_6) %>%
   pivot_longer(cols = Q7_1:Q7_6,
                names_to = "Question",
                values_to = "Choice") %>%
-  mutate(Choice = factor(Choice, levels = c("Not sure", "Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"))) %>%
+  mutate(Choice = factor(Choice, 
+                         levels = c("Not sure", "Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"))) %>%
   group_by(Question) %>% 
   count(Choice) %>%
   ggplot(aes(fill=Choice, values=n)) +
-    geom_waffle(color = "white", size=1.125, n_rows = 6) +
-    facet_wrap(~Question, ncol=3, labeller=labeller(Question = Q7labels2)) +
-    scale_x_discrete(expand=c(0,0)) +
-    scale_y_discrete(expand=c(0,0)) +
-    scale_fill_brewer(palette="GnBu") +
-    coord_equal() +
-    theme_enhance_waffle() +
-    theme(panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          axis.ticks = element_blank(),
-          legend.title=element_blank(),
-          legend.key = element_rect(fill = NA),
-          legend.text = element_text(hjust = 0, vjust = 1),
-          # The two following lines make the background transparent
-          panel.background = element_rect(fill = "transparent", colour = NA),
-          plot.background = element_rect(fill = "transparent", colour = NA))
+  geom_waffle(color = "white", 
+              size=1.125, 
+              n_rows = 6) +
+  facet_wrap(~Question, 
+             ncol=3, 
+             labeller=labeller(Question = Q7labels2)) +
+  scale_x_discrete(expand=c(0,0)) +
+  scale_y_discrete(expand=c(0,0)) +
+  scale_fill_brewer(palette="GnBu") +
+  coord_equal() +
+  theme_enhance_waffle() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        legend.title=element_blank(),
+        legend.key = element_rect(fill = NA),
+        legend.text = element_text(hjust = 0, vjust = 1),
+        # The two following lines make the background transparent
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))
 
 ggsave("~/Images/Q7_Facet_Waffle.png", bg = "transparent")
 ```
-
-
-```{r}
-Q1labels3 <- c(Q1_2 = "Our library provides \ninformation on community \nactivities and resources", 
-               Q1_5 = "Our library offers guidance \non how to find or use \nnew information resources",  
-               Q1_6 = "Our library offers guidance \non the use of \ninformation technologies")
-
-# https://github.com/hrbrmstr/waffle
-PLOD %>%
-  select(ResponseId, Q1_2, Q1_5, Q1_6) %>%
-  pivot_longer(cols = Q1_2:Q1_6,
-               names_to = "Question",
-               values_to = "Choice") %>%
-  mutate(Choice = factor(Choice, levels = c("Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"))) %>%
-  group_by(Question) %>% 
-  count(Choice) %>%
-  ggplot(aes(fill = Choice, values = n)) +
-    geom_waffle(color = "white", size = .25, n_rows = 4, flip = TRUE) +
-    facet_wrap(~Question, nrow = 1, strip.position = "bottom", labeller=labeller(Question = Q1labels3)) +
-    scale_x_discrete() + 
-    scale_y_continuous(labels = function(x) x * 4, # make this multiplyer the same as n_rows
-                     expand = c(0,0)) +
-    scale_fill_manual(
-      name = NULL,
-      values = c(
-        "Strongly disagree" = "#F7FCF0",
-        "Disagree" = "#CCEBC5",
-        "Neutral" = "#7BCCC4",
-        "Agree" = "#2B8CBE",
-        "Strongly agree" = "#084081"
-      )
-    ) + 
-  coord_equal() +
-  theme(panel.grid = element_blank(), 
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        #panel.background = element_blank(),
-        legend.key = element_rect(fill = NA),
-        # The two following lines make the background transparent
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA)) +
-  guides(fill = guide_legend(reverse = TRUE))
-
-ggsave("~/Images/Q1_256_Facet_Waffle.png", bg = "transparent")
-```
-
 
